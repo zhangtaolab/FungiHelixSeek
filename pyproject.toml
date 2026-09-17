@@ -1,0 +1,106 @@
+# FungiHelixSeek — Python project configuration
+# ──────────────────────────────────────────────────────────────────────────
+# Torch is intentionally NOT in [project.dependencies].
+# Install it FIRST according to your platform:
+#
+#   【NVIDIA GPU — CUDA 12.8】
+#     pip install torch --index-url https://download.pytorch.org/whl/cu128
+#
+#   【CPU only / dev】
+#     pip install torch
+# ──────────────────────────────────────────────────────────────────────────
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fungihelixseek"
+version = "1.0.0"
+description = "FungiHelixSeek: A Hybrid Linear Attention-Transformer Mixture-of-Experts DNA foundation model for Fungi"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.12"
+authors = [
+    {name = "Zhangtaolab", email = "forrest_zhang@163.com"},
+]
+keywords = [
+    "dna", "genomics", "bioinformatics", "foundation-model",
+    "transformer", "moe", "fungi-genomics", "deep-learning",
+    "gene-annotation", "taxonomic-classification", "epigenomics",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+
+dependencies = [
+    "transformers==4.49.0",
+    "tokenizers>=0.19.0",
+    "datasets>=2.10.0",
+    "evaluate>=0.4.0",
+    "accelerate>=0.20.0",
+    "numpy>=1.24.0",
+    "einops>=0.7.0",
+    "pandas>=2.0.0",
+    "scikit-learn>=1.3.0",
+    "scipy>=1.10.0",
+    "biopython>=1.81.0",
+    "tensorboard>=2.13.0",
+    "tqdm>=4.65.0",
+    "matplotlib>=3.7.0",
+    "pyyaml>=6.0",
+    "requests>=2.31.0",
+    "psutil>=5.9.0",
+    "rich>=13.5.0",
+]
+
+[project.optional-dependencies]
+# NVIDIA GPU: Flash Attention + Flash Linear Attention (CUDA only)
+gpu = [
+    "flash-attn>=2.0.0",
+    "flash-linear-attention==0.4.1",
+]
+# Development / testing
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+]
+
+[project.urls]
+Homepage = "https://huggingface.co/zhangtaolab/FungiHelixSeek"
+Documentation = "https://github.com/zhangtaolab/FungiHelixSeek#readme"
+Repository = "https://github.com/zhangtaolab/FungiHelixSeek.git"
+"Bug Tracker" = "https://github.com/zhangtaolab/FungiHelixSeek/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["scripts*"]
+exclude = ["tests*", "venv*", ".venv*", "FungiHelixSeek*", ".git*", "models*", "data*", "instruct*"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+markers = [
+    "slow: marks tests as slow",
+    "gpu: marks tests that require GPU",
+    "smoke: quick end-to-end verification tests",
+]
+
+[tool.black]
+line-length = 100
+target-version = ['py310', 'py311', 'py312']
+
+[tool.isort]
+profile = "black"
+line_length = 100
