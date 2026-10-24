@@ -1,8 +1,9 @@
 # FungiHelixSeek — Python dependencies
 # ──────────────────────────────────────────────────────────
 # Torch is NOT listed here — install separately for your platform:
-#   NVIDIA GPU:  pip install torch --index-url https://download.pytorch.org/whl/cu128
-#   CPU only:    pip install torch
+#   NVIDIA GPU:     pip install torch --index-url https://download.pytorch.org/whl/cu128
+#   Apple Silicon:  pip install "torch>=2.12"
+#   CPU only:       pip install torch
 # ──────────────────────────────────────────────────────────
 
 transformers==4.49.0

@@ -2,7 +2,7 @@
 """Shared utilities for FungiHelixSeek HuggingFace scripts.
 
 Handles the critical mlp.py cache workaround, device detection
-(CUDA / CPU), model loading, and metrics computation.
+(CUDA / Ascend NPU / Apple MPS / CPU), model loading, and metrics computation.
 """
 
 from __future__ import annotations
@@ -69,14 +69,34 @@ def copy_remote_code_files(model_path: str) -> Path:
     return cache_dir
 
 
+def _mps_device() -> torch.device:
+    if not torch.backends.mps.is_available():
+        raise RuntimeError("MPS requested but torch.backends.mps.is_available() is False")
+    version = re.match(r"(\d+)\.(\d+)", torch.__version__)
+    major, minor = (int(version.group(1)), int(version.group(2))) if version else (0, 0)
+    if major < 2 or (major == 2 and minor < 12):
+        logger.warning(
+            "torch %s on MPS returns query-shaped SDPA output when value head_dim "
+            "< query head_dim (breaks the MLA layers). Upgrade to torch>=2.12 or run "
+            "scripts/huggingface/apply_mps_fix.py --model_path <model_dir>.",
+            torch.__version__,
+        )
+    return torch.device("mps")
+
+
 def get_device(device_target: str = "auto") -> torch.device:
-    """Return a ``torch.device`` for ``auto`` / ``cuda`` / ``npu`` / ``cpu``."""
+    """Return a ``torch.device`` for ``auto`` / ``cuda`` / ``npu`` / ``mps`` / ``cpu``."""
     if device_target == "auto":
         if torch.cuda.is_available():
             return torch.device("cuda")
         if HAS_TORCH_NPU and torch.npu.is_available():
             return torch.device("npu")
+        if torch.backends.mps.is_available():
+            return _mps_device()
         return torch.device("cpu")
+
+    if device_target == "mps":
+        return _mps_device()
 
     if device_target == "cuda":
         if not torch.cuda.is_available():
@@ -95,11 +115,13 @@ def get_device(device_target: str = "auto") -> torch.device:
 
 
 def get_device_count() -> int:
-    """Number of accelerator devices visible (GPU or NPU)."""
+    """Number of accelerator devices visible (GPU, NPU, or 1 for MPS)."""
     if torch.cuda.is_available():
         return torch.cuda.device_count()
     if HAS_TORCH_NPU and torch.npu.is_available():
         return torch.npu.device_count()
+    if torch.backends.mps.is_available():
+        return 1
     return 0
 
 
@@ -298,7 +320,7 @@ def build_compute_metrics(task_type: str):
 
 
 def peak_memory_gb(device: torch.device) -> float:
-    """Peak memory allocated on ``device`` in GiB (0 for CPU)."""
+    """Peak memory allocated on ``device`` in GiB (0 on CPU / MPS)."""
     if device.type == "cuda":
         return torch.cuda.max_memory_allocated(device) / (1024**3)
     if device.type == "npu" and HAS_TORCH_NPU:
@@ -319,12 +341,14 @@ def device_synchronize(device: torch.device) -> None:
     """Block until all queued ops on ``device`` finish.
 
     Essential for accurate wall-clock timing on asynchronous accelerators
-    (e.g. CUDA). No-op for CPU.
+    (CUDA, Ascend NPU, Apple MPS). No-op for CPU.
     """
     if device.type == "cuda":
         torch.cuda.synchronize()
     elif device.type == "npu" and HAS_TORCH_NPU:
         torch.npu.synchronize()
+    elif device.type == "mps":
+        torch.mps.synchronize()
 
 
 def empty_device_cache(device: torch.device) -> None:
@@ -333,6 +357,8 @@ def empty_device_cache(device: torch.device) -> None:
         torch.cuda.empty_cache()
     elif device.type == "npu" and HAS_TORCH_NPU:
         torch.npu.empty_cache()
+    elif device.type == "mps":
+        torch.mps.empty_cache()
 
 
 def get_device_name(device: torch.device) -> str:
@@ -340,4 +366,6 @@ def get_device_name(device: torch.device) -> str:
         return torch.cuda.get_device_name(device)
     if device.type == "npu" and HAS_TORCH_NPU:
         return torch.npu.get_device_name(device)
+    if device.type == "mps":
+        return "Apple MPS"
     return "CPU"

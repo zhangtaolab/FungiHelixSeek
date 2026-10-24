@@ -68,7 +68,7 @@ python scripts/species_classification/predict.py \
 | `--model_path` | `models/FungiHelixSeek-Taxonomy` | Model dir (also provides `label_encoders.json`) |
 | `--input_fasta` | *(required)* | Input FASTA of ITS sequences |
 | `--output` | *(required)* | Output CSV path |
-| `--device` | `auto` | `cuda`, `cuda:0`, `cpu`, or `auto` |
+| `--device` | `auto` | `cuda`, `cuda:0`, `mps`, `cpu`, or `auto` |
 | `--batch_size` | 32 | Inference batch size |
 | `--max_length` | 1024 | Token truncation length (matches training) |
 | `--label_encoders` | `None` | Override path to `label_encoders.json` |

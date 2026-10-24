@@ -8,6 +8,9 @@
 #
 #   【CPU only / dev】
 #     pip install torch
+#
+#   【Apple Silicon — macOS / MPS】
+#     pip install "torch>=2.12"
 # ──────────────────────────────────────────────────────────────────────────
 
 [build-system]
@@ -67,6 +70,10 @@ dependencies = [
 gpu = [
     "flash-attn>=2.0.0",
     "flash-linear-attention==0.4.1",
+]
+# Apple Silicon: torch >= 2.12 fixes the MPS SDPA head-dim bug in the MLA layers
+mps = [
+    "torch>=2.12; sys_platform == 'darwin'",
 ]
 # Development / testing
 dev = [

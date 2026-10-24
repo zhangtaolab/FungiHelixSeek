@@ -253,7 +253,11 @@ def main():
 
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
-    device = torch.device(args.device if args.device != "auto" else ("cuda" if torch.cuda.is_available() else "cpu"))
+    device = torch.device(args.device if args.device != "auto" else (
+        "cuda" if torch.cuda.is_available()
+        else "mps" if torch.backends.mps.is_available()
+        else "cpu"
+    ))
 
     train_records = parse_fasta(args.train_fasta)
     if args.label_encoders:

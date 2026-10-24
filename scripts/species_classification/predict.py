@@ -89,7 +89,7 @@ def main():
                    help="HF-format model directory (config.json + model.safetensors + remote code)")
     p.add_argument("--input_fasta", required=True, help="Input FASTA of ITS sequences")
     p.add_argument("--output", required=True, help="Output CSV path")
-    p.add_argument("--device", default="auto", help="cuda, cuda:0, cpu, or auto")
+    p.add_argument("--device", default="auto", help="cuda, cuda:0, mps, cpu, or auto")
     p.add_argument("--batch_size", type=int, default=32)
     p.add_argument("--max_length", type=int, default=1024,
                    help="Token truncation length (must match training, 1024)")
@@ -98,7 +98,11 @@ def main():
     args = p.parse_args()
 
     if args.device == "auto":
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        device = torch.device(
+            "cuda" if torch.cuda.is_available()
+            else "mps" if torch.backends.mps.is_available()
+            else "cpu"
+        )
     else:
         device = torch.device(args.device)
 

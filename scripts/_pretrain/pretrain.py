@@ -64,7 +64,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--eval_ratio", type=float, default=0.1, help="Fraction of data held out for eval")
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--max_train_samples", type=int, default=None)
-    p.add_argument("--device_target", default="auto", choices=["auto", "cuda", "npu", "cpu"])
+    p.add_argument("--device_target", default="auto", choices=["auto", "cuda", "npu", "mps", "cpu"])
     return p.parse_args()
 
 

@@ -78,7 +78,7 @@ Run from the repository root. Plain and `.gz` FASTA are both accepted; each cont
 | `--stride` | 2048 | Window step; `< window-size` enables overlap averaging (recommended) |
 | `--window-size` | 8192 | Inference window (= model max positions) |
 | `--pad` | 200 | Gene-span padding in bp, capped at the midpoint between adjacent genes |
-| `--device` | auto | `auto` / `cuda:0` / `cpu` |
+| `--device` | auto | `auto` / `cuda:0` / `mps` / `cpu` |
 | `--processes` | 5 | HMM decode worker processes (one contig per task) |
 | `--source` | FungiHelixSeek | GFF3 source column |
 | `--probs-dir` | `<out>.probs` | Cache dir for per-contig probability npz |

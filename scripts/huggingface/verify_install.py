@@ -33,7 +33,7 @@ def check_version(name: str, required: str | None = None):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_path", "-m", default="models/FungiHelixSeek")
-    parser.add_argument("--device", default="auto", choices=["auto", "cuda", "cpu"])
+    parser.add_argument("--device", default="auto", choices=["auto", "cuda", "npu", "mps", "cpu"])
     args = parser.parse_args()
 
     logger.info("=" * 50)
@@ -52,6 +52,10 @@ def main():
     device = get_device(args.device)
     if device.type == "cuda":
         logger.info("  ✓ CUDA available: %s", torch.cuda.get_device_name(0))
+    elif device.type == "npu":
+        logger.info("  ✓ NPU available")
+    elif device.type == "mps":
+        logger.info("  ✓ Apple MPS available")
     else:
         logger.info("  → Running on CPU (training will be slow)")
 

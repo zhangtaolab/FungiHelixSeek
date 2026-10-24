@@ -44,7 +44,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--top_k", type=int, default=5)
     p.add_argument("--max_length", type=int, default=512)
     p.add_argument("--batch_size", type=int, default=32)
-    p.add_argument("--device", default="auto", choices=["auto", "cuda", "cpu"])
+    p.add_argument("--device", default="auto", choices=["auto", "cuda", "npu", "mps", "cpu"])
     p.add_argument("--torch_dtype", default="float32",
                    choices=["float32", "float16", "bfloat16"])
     return p.parse_args()

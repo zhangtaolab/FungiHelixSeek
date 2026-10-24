@@ -48,7 +48,11 @@ def resolve_device(target: str):
     if target != "auto":
         return target
     import torch
-    return "cuda:0" if torch.cuda.is_available() else "cpu"
+    if torch.cuda.is_available():
+        return "cuda:0"
+    if torch.backends.mps.is_available():
+        return "mps"
+    return "cpu"
 
 
 def apply_length_priors(path: Path | None) -> None:
@@ -159,7 +163,7 @@ def main() -> None:
     ap.add_argument("--pad", type=int, default=200,
                     help="gene-span padding bp, gap-capped between neighbours")
     ap.add_argument("--device", default="auto",
-                    help="auto | cuda:0 | cpu (default auto)")
+                    help="auto | cuda:0 | mps | cpu (default auto)")
     ap.add_argument("--processes", type=int, default=5,
                     help="decode worker processes (per contig)")
     ap.add_argument("--source", default="FungiHelixSeek",

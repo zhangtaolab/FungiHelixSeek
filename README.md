@@ -177,7 +177,7 @@ modelscope download --model zhangtaolab/FungiHelixSeek-Taxonomy --local_dir ./mo
 
 ## Installation
 
-**Requirements**: Python ≥ 3.12 · NVIDIA GPU (CUDA 12.x) or CPU
+**Requirements**: Python ≥ 3.12 · NVIDIA GPU (CUDA 12.x), Apple Silicon (MPS), or CPU
 
 Managed with [uv](https://docs.astral.sh/uv/), using a local `.venv` environment in the repository root:
 
@@ -195,6 +195,7 @@ source .venv/bin/activate
 # PyTorch first (choose one)
 uv pip install torch --index-url https://download.pytorch.org/whl/cu128   # NVIDIA GPU (CUDA 12.x/13.x)
 uv pip install torch                                                     # CPU only
+uv pip install "torch>=2.12"                                             # Apple Silicon (MPS)
 
 # Dependencies
 uv pip install -r requirements.txt
@@ -204,6 +205,26 @@ python scripts/huggingface/verify_install.py --model_path models/FungiHelixSeek
 ```
 
 > ⚠️ CPU mode is for code debugging only — the 263M-parameter model is very slow on CPU.
+
+### Apple Silicon (macOS, MPS)
+
+```bash
+uv pip install "torch>=2.12"   # 2.12.0 / 2.13.0 / 2.14.1 verified
+uv pip install -r requirements.txt
+python scripts/huggingface/verify_install.py --model_path models/FungiHelixSeek --device mps
+```
+
+There are no Triton wheels for macOS, so the KDA layers run a pure PyTorch
+fallback — use MPS for validation, not throughput. On **torch <= 2.11** the MPS
+SDPA kernel returns a query-shaped output when the value head dim is smaller
+than the query head dim, which crashes the MLA layers; upgrade or patch the
+downloaded checkpoint:
+
+```bash
+python scripts/huggingface/apply_mps_fix.py --model_path models/FungiHelixSeek --kda_fallback
+```
+
+See [docs/installation.md](docs/installation.md) for details.
 
 📖 **Full installation guide**: [docs/installation.md](docs/installation.md)
 
@@ -380,6 +401,7 @@ modelscope download --dataset zhangtaolab/FungiHelixSeek-Anno \
 | [finetune.py](scripts/huggingface/finetune.py)             | Sequence classification fine-tuning |
 | [predict.py](scripts/huggingface/predict.py)               | Fine-tuned model prediction         |
 | [verify_install.py](scripts/huggingface/verify_install.py) | Environment verification            |
+| [apply_mps_fix.py](scripts/huggingface/apply_mps_fix.py)   | macOS/MPS checkpoint patch (SDPA + KDA fallback) |
 
 ### DNALLM Integration (`scripts/dnallm/`)
 

@@ -62,7 +62,7 @@ def parse_args() -> argparse.Namespace:
                    help="Comma-separated tasks: pretrain,finetune,inference")
     p.add_argument("--warmup_steps", type=int, default=3)
     p.add_argument("--measure_steps", type=int, default=10)
-    p.add_argument("--device", default="auto", choices=["auto", "cuda", "cpu"])
+    p.add_argument("--device", default="auto", choices=["auto", "cuda", "npu", "mps", "cpu"])
     p.add_argument("--torch_dtype", default="bfloat16",
                    choices=["float32", "bfloat16", "float16"],
                    help="Model dtype for benchmarking (default: bfloat16, matching real pretraining)")

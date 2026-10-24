@@ -62,7 +62,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--gradient_checkpointing", default="false", choices=["true", "false"])
     p.add_argument("--metric_for_best_model", default=None)
     p.add_argument("--seed", type=int, default=42)
-    p.add_argument("--device_target", default="auto", choices=["auto", "cuda", "cpu"])
+    p.add_argument("--device_target", default="auto", choices=["auto", "cuda", "npu", "mps", "cpu"])
     p.add_argument("--max_train_samples", type=int, default=None)
     p.add_argument("--max_eval_samples", type=int, default=None)
     p.add_argument("--max_test_samples", type=int, default=None)
