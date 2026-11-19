@@ -246,6 +246,7 @@ data/gene_annotation_dataset/
 .DS_Store?
 ._.DS_Store
 **/._.DS_Store
+GUI
 
 # uv virtual environment (named FungiHelixSeek per docs/installation.md)
 FungiHelixSeek/
