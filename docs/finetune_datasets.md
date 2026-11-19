@@ -23,7 +23,7 @@ This document details the **3 dataset repos** and **14 fine-tuned models** in th
 | `FungiHelixSeek-H3K27ac` | binary | fungi-histone-modifications (H3K27ac) ★ | `models/finetuned/FungiHelixSeek-H3K27ac` | `.../H3K27ac` |
 | `FungiHelixSeek-H3K27me3` | binary | fungi-histone-modifications (H3K27me3) ★ | `models/finetuned/FungiHelixSeek-H3K27me3` | `.../H3K27me3` |
 
-> ★ Custom-built (in-house) tasks completing the histone-mark panel — GUE EMP lacks H3K27 marks. The other 10 subsets derive from the [GUE EMP benchmark](https://github.com/lingxinzhou/GUE) (*S. cerevisiae* ChIP-chip, 500 bp windows).
+> ★ `H3K27ac` and `H3K27me3` were built from public fungal datasets; the other 10 subsets are sourced from the [GUE EMP benchmark](https://github.com/lingxinzhou/GUE) (*S. cerevisiae*, 500 bp windows).
 
 Download any epigenomic model directly:
 
@@ -41,7 +41,7 @@ done; wait
 ### fungi-histone-modifications — 12 binary tasks
 
 - **Task**: Predict whether a 500 bp fungal genomic region carries a given histone mark.
-- **Subsets (12)**: `H3`, `H3K4me1`, `H3K4me2`, `H3K4me3`, `H3K9ac`, `H3K14ac`, `H3K36me3`, `H3K79me3`, `H4`, `H4ac` (GUE EMP) + `H3K27ac`, `H3K27me3` (custom-built)
+- **Subsets (12)**: `H3`, `H3K4me1`, `H3K4me2`, `H3K4me3`, `H3K9ac`, `H3K14ac`, `H3K36me3`, `H3K79me3`, `H4`, `H4ac` (GUE) + `H3K27ac`, `H3K27me3` (fungal public data)
 - **Format**: per-subset `train/dev/test.csv` with `sequence,label` columns
 - **Models**: 12 models, one per subset — see mapping above
 - **Source**: [🤗 dataset](https://huggingface.co/datasets/zhangtaolab/fungi-histone-modifications) · [🧩 ModelScope](https://www.modelscope.cn/datasets/zhangtaolab/fungi-histone-modifications)

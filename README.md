@@ -140,8 +140,8 @@ FungiHelixSeek ships with **1 pretrained base model** and **14 task-specific fin
 | `FungiHelixSeek-H3K4me1` | GUE EMP | 0.814 | `FungiHelixSeek-H3K79me3` | GUE EMP                 | 0.858 |
 | `FungiHelixSeek-H3K4me2` | GUE EMP | 0.794 | `FungiHelixSeek-H4`       | GUE EMP                 | 0.903 |
 | `FungiHelixSeek-H3K4me3` | GUE EMP | 0.783 | `FungiHelixSeek-H4ac`     | GUE EMP                 | 0.798 |
-| `FungiHelixSeek-H3K9ac`  | GUE EMP | 0.808 | `FungiHelixSeek-H3K27ac`  | Custom-built (in-house) | 0.805 |
-| `FungiHelixSeek-H3K14ac` | GUE EMP | 0.829 | `FungiHelixSeek-H3K27me3` | Custom-built (in-house) | 0.761 |
+| `FungiHelixSeek-H3K9ac`  | GUE EMP | 0.808 | `FungiHelixSeek-H3K27ac`  | Fungal public data | 0.805 |
+| `FungiHelixSeek-H3K14ac` | GUE EMP | 0.829 | `FungiHelixSeek-H3K27me3` | Fungal public data | 0.761 |
 
 Each epigenomic model links to its dataset subset — see [docs/finetune_datasets.md](docs/finetune_datasets.md) for the full model–dataset mapping with download commands.
 
