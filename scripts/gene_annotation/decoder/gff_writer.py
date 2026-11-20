@@ -1,4 +1,9 @@
 def gene_to_gff_lines(seqid, gene, gid, source="FungiHelixSeek", strand="+"):
+    if not isinstance(gene, dict):
+        from plant_decoder.model import Gene
+        if isinstance(gene, Gene):
+            from plant_decoder.writer import gene_to_gff_lines as _plant_writer
+            return _plant_writer(seqid, gene, gid, source)
     L = []
     a = L.append
     span_starts = [gene["start"]] + [gene["cds"][0][0]]

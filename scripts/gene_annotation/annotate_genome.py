@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
 """FungiHelixSeek-Anno genome annotation: FASTA -> per-base BILOU
-probabilities -> phase-aware HMM Viterbi -> GFF3 gene models, one command.
+probabilities -> selectable decoder -> GFF3 gene models, one command.
 
 Three stages, each skippable so probabilities can be cached and decoding
 re-tuned without re-running GPU inference:
   predict   sliding-window inference (window 8192) on both strands with
             overlap averaging when stride < window; per-contig probability
             npz cached under --probs-dir
-  decode    15-state phase-aware HMM Viterbi -> raw GFF3 (GT..AG splice hard
-            constraints, empirical intron/exon length priors, split-gene
-            rescue); gene-span padding (--pad, default 200)
+  decode    selectable decoder -> raw GFF3. The default --decoder repair is a
+            vendored Plant-compatible 5-class Viterbi plus terminal ORF
+            repair; --decoder viterbi and --decoder orf are also available.
+            --decoder hmm selects the legacy 15-state phase-aware HMM
+            Viterbi (GT/GC/AT..AG splice hard constraints, empirical
+            intron/exon length priors, split-gene rescue). Gene-span padding
+            (--pad) defaults to 200 for hmm and 0 for the Plant decoders
   out       final GFF3 with gene / mRNA / exon / CDS / UTR features
 
 Usage (from the repo root):
@@ -23,7 +27,6 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
-from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
 
@@ -97,6 +100,39 @@ def run_predict(args, probs_dir: Path) -> None:
             rev_probs17=rp17.astype(np.float16), rev_phase=rphase, rev_bnd=rbnd)
 
 
+def _decode_contig_task(task):
+    """Top-level, picklable per-contig decode worker for ``Pool.map``."""
+    name, seq, path, opts = task
+    length = len(seq)
+    if opts["decoder"] == "hmm" and opts.get("length_priors"):
+        apply_length_priors(Path(opts["length_priors"]))
+    with np.load(path) as z:
+        fwd17 = decode_core._array(z, "fwd_probs17", length, decode_core.N_LABELS)
+        fwd_phase = decode_core._array(z, "fwd_phase", length,
+                                       decode_core.N_PHASE, 1.0 / decode_core.N_PHASE)
+        fwd_bnd = decode_core._array(z, "fwd_bnd", length, None, 0.0)
+        rev17 = decode_core._array(z, "rev_probs17", length, decode_core.N_LABELS)
+        rev_phase = decode_core._array(z, "rev_phase", length,
+                                       decode_core.N_PHASE, 1.0 / decode_core.N_PHASE)
+        rev_bnd = decode_core._array(z, "rev_bnd", length, None, 0.0)
+    return decode_core.decode_contig(
+        name, seq, fwd17, fwd_phase, fwd_bnd,
+        p17_r=rev17, p_phase_r=rev_phase, p_bnd_r=rev_bnd,
+        decoder=opts["decoder"],
+        len_prior=opts.get("len_prior", True),
+        rescue=opts.get("rescue", True),
+        **opts.get("config", {}),
+    )
+
+
+def _gene_start(gene) -> int:
+    return gene.start if hasattr(gene, "start") else gene["start"]
+
+
+def _gene_strand(gene) -> str:
+    return gene.strand if hasattr(gene, "strand") else gene["strand"]
+
+
 def run_decode(args, probs_dir: Path, raw_out: Path) -> None:
     seqs = decode_core.load_fasta(args.genome_fasta)
     sources = {}
@@ -107,30 +143,48 @@ def run_decode(args, probs_dir: Path, raw_out: Path) -> None:
     lookup = {k: k for k in sources}
     lookup.update({k.replace("|", "_"): k for k in sources})
 
+    opts = {
+        "decoder": args.decoder,
+        "len_prior": True,
+        "rescue": True,
+        "length_priors": getattr(args, "length_priors", None),
+        "config": {
+            "prior": args.prior,
+            "intergenic_boost": args.intergenic_boost,
+            "viterbi_alpha": args.viterbi_alpha,
+            "genic_threshold": args.genic_threshold,
+            "single_exon_prob": args.single_exon_prob,
+            "single_exon_min_cds": args.single_exon_min_cds,
+            "repair_w5": args.repair_w5,
+            "repair_w3": args.repair_w3,
+            "repair_start_rule": args.repair_start_rule,
+            "orf_max_shift": args.orf_max_shift,
+        },
+    }
+
     tasks = []
     for name, seq in seqs.items():
         path = sources.get(lookup.get(name, ""))
         if path is None:
             logger.warning("no probability npz for contig %s -- skipped", name)
             continue
-        tasks.append((name, seq, "dir", path, ""))
-    work = partial(decode_core._decode_one, len_prior=True, rescue=True)
+        tasks.append((name, seq, path, opts))
     if args.processes > 1 and len(tasks) > 1:
         with Pool(args.processes) as pool:
-            results = pool.map(work, tasks)
+            results = pool.map(_decode_contig_task, tasks)
     else:
-        results = [work(t) for t in tasks]
+        results = [_decode_contig_task(t) for t in tasks]
 
     n_genes = 0
     raw_out.parent.mkdir(parents=True, exist_ok=True)
     with open(raw_out, "w") as fh:
         fh.write("##gff-version 3\n")
-        for (name, _, _, _, _), genes in zip(tasks, results):
-            for g in sorted(genes, key=lambda x: x["start"]):
+        for (name, _, _, _), genes in zip(tasks, results):
+            for g in sorted(genes, key=_gene_start):
                 n_genes += 1
                 gid = f"{args.source}_{name}_g{n_genes}"
-                for ln in decode_core.gene_to_gff_lines(name, g, gid,
-                                                        args.source, g["strand"]):
+                for ln in decode_core.gene_to_gff_lines(
+                        name, g, gid, args.source, _gene_strand(g)):
                     fh.write(ln + "\n")
     logger.info("decoded %d genes -> %s", n_genes, raw_out)
 
@@ -160,8 +214,34 @@ def main() -> None:
                          "averaging (recommended 2048)")
     ap.add_argument("--window-size", type=int, default=8192,
                     help="inference window (= model max positions)")
-    ap.add_argument("--pad", type=int, default=200,
-                    help="gene-span padding bp, gap-capped between neighbours")
+    ap.add_argument("--decoder", choices=("repair", "viterbi", "orf", "hmm"),
+                    default="repair",
+                    help="repair | viterbi | orf use the Plant decoder; hmm is "
+                         "the legacy Fungi HMM (default repair)")
+    ap.add_argument("--prior", choices=("fungi", "plant"), default="fungi",
+                    help="transition prior for the Plant decoders (default fungi)")
+    ap.add_argument("--intergenic-boost", type=float, default=0.0,
+                    help="Plant Viterbi intergenic score boost (default 0)")
+    ap.add_argument("--viterbi-alpha", type=float, default=0.0,
+                    help="Plant Viterbi transition smoothing alpha (default 0)")
+    ap.add_argument("--genic-threshold", type=float, default=0.25,
+                    help="Plant Viterbi genic probability threshold (default 0.25)")
+    ap.add_argument("--single-exon-prob", type=float, default=0.7,
+                    help="minimum confidence for a single-exon gene (default 0.7)")
+    ap.add_argument("--single-exon-min-cds", type=int, default=200,
+                    help="minimum CDS length for a single-exon gene (default 200)")
+    ap.add_argument("--repair-w5", type=int, default=300,
+                    help="repair 5' extension window in bp (default 300)")
+    ap.add_argument("--repair-w3", type=int, default=300,
+                    help="repair 3' extension window in bp (default 300)")
+    ap.add_argument("--repair-start-rule",
+                    choices=("nearest", "first", "longest"), default="nearest",
+                    help="repair start-codon selection rule (default nearest)")
+    ap.add_argument("--orf-max-shift", type=int, default=3,
+                    help="maximum ORF frame shift for the orf decoder (default 3)")
+    ap.add_argument("--pad", type=int, default=None,
+                    help="gene-span padding bp, gap-capped between neighbours "
+                         "(default 200 for --decoder hmm, else 0)")
     ap.add_argument("--device", default="auto",
                     help="auto | cuda:0 | mps | cpu (default auto)")
     ap.add_argument("--processes", type=int, default=5,
@@ -176,6 +256,8 @@ def main() -> None:
 
     if args.stride > args.window_size:
         ap.error("--stride must be <= --window-size")
+    if args.pad is None:
+        args.pad = 200 if args.decoder == "hmm" else 0
 
     probs_dir = Path(args.probs_dir) if args.probs_dir else \
         Path(str(args.out) + ".probs")

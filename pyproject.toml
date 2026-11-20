@@ -63,6 +63,7 @@ dependencies = [
     "requests>=2.31.0",
     "psutil>=5.9.0",
     "rich>=13.5.0",
+    "numba>=0.60",
 ]
 
 [project.optional-dependencies]
@@ -102,6 +103,7 @@ markers = [
     "slow: marks tests as slow",
     "gpu: marks tests that require GPU",
     "smoke: quick end-to-end verification tests",
+    "parity: structural parity tests against cached reference artifacts",
 ]
 
 [tool.black]
