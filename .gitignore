@@ -248,5 +248,8 @@ data/gene_annotation_dataset/
 **/._.DS_Store
 GUI
 
+# Local experiment tests only (not for version control)
+tests/gene_annotation/
+
 # uv virtual environment (named FungiHelixSeek per docs/installation.md)
 FungiHelixSeek/

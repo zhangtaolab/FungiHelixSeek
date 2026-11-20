@@ -130,7 +130,7 @@ FungiHelixSeek ships with **1 pretrained base model** and **14 task-specific fin
 
 | Model Name              | Task                                             | Labels     | Key Result (11-species mean)                               | Model Download                                                                                                                             |
 | ----------------------- | ------------------------------------------------ | ---------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `FungiHelixSeek-Anno` | Per-nucleotide gene features → GFF3 (BILOU+HMM) | 17 (BILOU) | CDS base F1 **0.943** (8-species mean) | [🤗 HF](https://huggingface.co/zhangtaolab/FungiHelixSeek-Anno) · [🧩 MS](https://www.modelscope.cn/models/zhangtaolab/FungiHelixSeek-Anno) |
+| `FungiHelixSeek-Anno` | Per-nucleotide gene features → GFF3 (BILOU + viterbi+repair) | 17 (BILOU) | CDS base F1 **0.943** (8-species mean) | [🤗 HF](https://huggingface.co/zhangtaolab/FungiHelixSeek-Anno) · [🧩 MS](https://www.modelscope.cn/models/zhangtaolab/FungiHelixSeek-Anno) |
 
 **Epigenomics (12)** — histone-mark region prediction (all binary, 500 bp):
 
@@ -327,7 +327,7 @@ Two flagship downstream tasks ship with dedicated, end-to-end pipelines:
 | Pipeline                                                                   | Task                                     | Model                       | Highlights                                                       |
 | -------------------------------------------------------------------------- | ---------------------------------------- | --------------------------- | ---------------------------------------------------------------- |
 | [scripts/species_classification/](scripts/species_classification/README.md) | 6-level ITS taxonomic classification     | `FungiHelixSeek-Taxonomy` | FASTA → taxonomy CSV; multi-head + hierarchical label smoothing |
-| [scripts/gene_annotation/](scripts/gene_annotation/README.md)               | Genome → GFF3 gene structure prediction | `FungiHelixSeek-Anno`     | Sliding-window inference + phase-aware HMM Viterbi decoding      |
+| [scripts/gene_annotation/](scripts/gene_annotation/README.md)               | Genome → GFF3 gene structure prediction | `FungiHelixSeek-Anno`     | Sliding-window inference + viterbi+repair decoding (legacy HMM optional) |
 
 ```bash
 # Taxonomy: classify ITS barcodes
@@ -437,14 +437,14 @@ FungiHelixSeek/
 ├── data/
 │   ├── Bio_finetune_data/             # 12 histone-mark datasets (download)
 │   ├── species_classification/        # ITS barcode datasets (download)
-│   ├── gene_annotation/               # HMM priors + test genome fixture
+│   ├── gene_annotation/               # Decoder priors + test genome fixture
 │   ├── gene_annotation_dataset/       # Annotation fine-tune data (download)
 │   └── test_data/                     # Smoke-test fixtures
 ├── scripts/
 │   ├── huggingface/                   # Main scripts (inference/finetune/predict)
 │   ├── dnallm/                        # DNALLM package wrappers
 │   ├── species_classification/        # Taxonomy pipeline
-│   └── gene_annotation/               # Annotation pipeline (predict + HMM decode)
+│   └── gene_annotation/               # Annotation pipeline (predict + decode)
 ├── tests/                             # End-to-end smoke tests
 ├── docs/                              # Installation & dataset docs
 ├── picture/                           # Logo, benchmark figures
